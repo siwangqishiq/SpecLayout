@@ -13,12 +13,12 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 public class SpecbgLayout extends LinearLayout {
-    private int mPadding = 50;
+    private int mPadding = 100;
 
     private Context mContext;
     private Paint mPaint = new Paint();
     private Paint mShaderPaint = new Paint();
-    private Path mCarvePath;
+    private Path mCarvePath = new Path();
 
     private int mCurSelectedIndex = 0;
 
@@ -43,6 +43,13 @@ public class SpecbgLayout extends LinearLayout {
         initView(context);
     }
 
+    public void setSelected(final int index){
+        if(mCurSelectedIndex!= index){
+            mCurSelectedIndex = index;
+            invalidate();
+        }
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //        int widthMode = MeasureSpec.getMode(heightMeasureSpec);
@@ -65,8 +72,9 @@ public class SpecbgLayout extends LinearLayout {
 
         //mShaderPaint.setColor(Color.BLACK);
         mShaderPaint.setStyle(Paint.Style.FILL);
+        mShaderPaint.setAlpha(200);
         mShaderPaint.setStrokeJoin(Paint.Join.ROUND);
-        mShaderPaint.setShadowLayer(20,0,0,Color.parseColor("#11000000"));
+        mShaderPaint.setShadowLayer(20, 0, 0, Color.parseColor("#11000000"));
         //mShaderPaint.setShadowLayer(40,0,0,Color.YELLOW);
 
         mCarvePath = new Path();
@@ -77,35 +85,45 @@ public class SpecbgLayout extends LinearLayout {
             return false;
 
         View curView = null;
-        for (int i = 0,N = getChildCount(); i < N; i++) {
-            if(i == mCurSelectedIndex){
+        for (int i = 0, N = getChildCount(); i < N; i++) {
+            if (i == mCurSelectedIndex) {
                 curView = getChildAt(i);
                 break;
             }
         }//end for i
 
         //not found selected
-        if(curView == null || curView.getMeasuredWidth() == 0 || curView.getMeasuredHeight() == 0)
+        if (curView == null || curView.getMeasuredWidth() == 0 || curView.getMeasuredHeight() == 0)
             return false;
 
-        renderCurveBg(canvas , curView);
+        renderCurveBg(canvas, curView);
         return true;
     }
 
-    private void renderCurveBg(Canvas canvas , View curView){
-        if(canvas == null || curView == null)
+    private void renderCurveBg(Canvas canvas, View curView) {
+        if (canvas == null || curView == null)
             return;
 
+        float radius = (curView.getMeasuredHeight() >> 1);
+
+        mCarvePath.reset();
         float x1 = getMeasuredWidth();
         float y1 = curView.getTop() - mPadding;
 
-        mCarvePath.reset();
-        mCarvePath.moveTo(x1 , y1);
-        mCarvePath.lineTo(curView.getLeft() , curView.getTop()+ (curView.getMeasuredHeight()>>1));
-        mCarvePath.lineTo(getMeasuredWidth() , curView.getBottom() + mPadding);
+        float x2 = x1 - mPadding;
+        float y2 = curView.getTop();
+
+        mCarvePath.moveTo(x1, y1);
+        mCarvePath.quadTo(x1, curView.getTop(), x2, y2);
+        mCarvePath.lineTo(curView.getLeft() + radius, curView.getTop());
+        mCarvePath.quadTo(curView.getLeft() , curView.getTop() , curView.getLeft() , curView.getTop()+radius);
+        mCarvePath.quadTo(curView.getLeft() , curView.getBottom() , curView.getLeft() +radius , curView.getBottom());
+        mCarvePath.lineTo(x2, curView.getTop() + curView.getMeasuredHeight());
+        mCarvePath.quadTo(getMeasuredWidth(), curView.getBottom(), getMeasuredWidth(), curView.getBottom() + mPadding);
         mCarvePath.close();
 
-        canvas.drawPath(mCarvePath , mShaderPaint);
-        canvas.drawPath(mCarvePath , mPaint);
+        canvas.drawPath(mCarvePath, mShaderPaint);
+        canvas.drawPath(mCarvePath, mPaint);
     }
+
 }//end class
